@@ -20,5 +20,8 @@
     "comb"
   ],
   "author": "Doug Martin",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "zmq": "~2.1.0"
+  }
 }
