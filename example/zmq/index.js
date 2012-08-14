@@ -19,7 +19,6 @@ if (cluster.isMaster) {
 
     var logger = comb.logging.Logger.getLogger("zmq-test");
     logger.addAppender(new ZeroMqAppender({address:address}));
-    logger.addAppender(new ZeroMqAppender({name : "customEnvelope", address:address, envelope:"{levelName}-{name}"}));
     var levels = ["debug", "trace", "info", "warn", "error", "fatal"], count = 0;
     setInterval(function () {
         var level = levels[count++ % levels.length];
@@ -36,7 +35,8 @@ if (cluster.isMaster) {
 
     socket.connect(address);
     //socket.subscribe("INFO");
-    socket.subscribe("INFO-zmq-test");
+    socket.subscribe("INFO");
+    socket.subscribe("DEBUG");
     socket.on('message', function (envelope, data) {
         console.log(socket.identity + ': received \n\tenvelope: %s \n\tdata : %s', envelope.toString(), data.toString());
     });
