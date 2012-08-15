@@ -22,6 +22,7 @@
   "author": "Doug Martin",
   "license": "MIT",
   "dependencies": {
-    "zmq": "~2.1.0"
+    "zmq": "~2.1.0",
+    "amqp": "~0.1.3"
   }
 }
