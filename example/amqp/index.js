@@ -6,9 +6,10 @@
 "use strict";
 
 var cluster = require('cluster'),
-    zmq = require('zmq'),
-    address = 'tcp://127.0.0.1:12345',
-    ZeroMqAppender = require("../../index.js").ZeroMqAppender,
+    amqp = require('amqp'),
+    address = 'amqp://guest:guest@127.0.0.1:12345',
+    queueName = 'my-queue',
+    AmqpAppender = require("../../index.js").AmqpAppender,
     comb = require("comb");
 
 if (cluster.isMaster) {
@@ -19,7 +20,7 @@ if (cluster.isMaster) {
     });
 
     var logger = comb.logging.Logger.getLogger("zmq-test");
-    logger.addAppender(new ZeroMqAppender({address:address}));
+    logger.addAppender(new AmqpAppender({queueName : queueName, address : address}));
     var levels = ["debug", "trace", "info", "warn", "error", "fatal"], count = 0;
     setInterval(function () {
         var level = levels[count++ % levels.length];
@@ -30,16 +31,17 @@ if (cluster.isMaster) {
 
 } else {
     //subscriber = receive only
-    var socket = zmq.socket('sub');
+    //
+    var connection = amqp.createConnection();
 
-    socket.identity = 'subscriber' + process.pid;
+    connection.on('ready', function () {
+        connection.queue(queueName, function (q) {
+            // bind to all
+            q.bind('#');
 
-    socket.connect(address);
-    //socket.subscribe("INFO");
-    socket.subscribe("INFO");
-    socket.subscribe("DEBUG");
-    socket.on('message', function (envelope, data) {
-        console.log(socket.identity + ': received \n\tenvelope: %s \n\tdata : %s', envelope.toString(), data.toString());
+            q.subscribe(function (message) {
+                console.log(message);
+            });
+        });
     });
-
 }
