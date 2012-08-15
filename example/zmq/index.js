@@ -3,15 +3,16 @@
  * Publisher subscriber pattern
  *
  */
+"use strict";
 
 var cluster = require('cluster'),
     zmq = require('zmq'),
     address = 'tcp://127.0.0.1:12345',
-    ZeroMqAppender = require("../../index.js").ZeroMqAppender;
-comb = require("comb");
+    ZeroMqAppender = require("../../index.js").ZeroMqAppender,
+    comb = require("comb");
 
 if (cluster.isMaster) {
-    for (var i = 0; i < 2; i++) cluster.fork();
+    for (var i = 0; i < 2; i++) { cluster.fork(); }
 
     cluster.on('death', function (worker) {
         console.log('worker ' + worker.pid + ' died');
