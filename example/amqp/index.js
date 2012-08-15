@@ -7,10 +7,27 @@
 
 var cluster = require('cluster'),
     amqp = require('amqp'),
-    address = 'amqp://guest:guest@127.0.0.1:12345',
+    address = 'amqp://guest:guest@127.0.0.1:5672',
     queueName = 'my-queue',
     AmqpAppender = require("../../index.js").AmqpAppender,
     comb = require("comb");
+
+function listen (connection) {
+    return {
+        toQueue : function listenToQueue (queueName) {
+            connection.queue(queueName, function (q) {
+                console.log('listenToQueue: ' + queueName);
+                // bind to all
+                q.bind('#');
+
+                q.subscribe(function (message) {
+                    console.log(queueName + ' - ' + JSON.stringify(message));
+                });
+            });
+            return this;
+        }
+    };
+}
 
 if (cluster.isMaster) {
     for (var i = 0; i < 2; i++) { cluster.fork(); }
@@ -19,8 +36,10 @@ if (cluster.isMaster) {
         console.log('worker ' + worker.pid + ' died');
     });
 
-    var logger = comb.logging.Logger.getLogger("zmq-test");
-    logger.addAppender(new AmqpAppender({queueName : queueName, address : address}));
+    var logger = comb.logging.Logger.getLogger(queueName);
+    logger.addAppender(new AmqpAppender({queueName : queueName + '-warn', level : 'warn', address : address}));
+    logger.addAppender(new AmqpAppender({queueName : queueName + '-debug', name : 'debug', level : 'debug', address : address}));
+    // logger.addAppender(new comb.logging.appenders.ConsoleAppender());
     var levels = ["debug", "trace", "info", "warn", "error", "fatal"], count = 0;
     setInterval(function () {
         var level = levels[count++ % levels.length];
@@ -35,13 +54,9 @@ if (cluster.isMaster) {
     var connection = amqp.createConnection();
 
     connection.on('ready', function () {
-        connection.queue(queueName, function (q) {
-            // bind to all
-            q.bind('#');
-
-            q.subscribe(function (message) {
-                console.log(message);
-            });
-        });
+        listen(connection)
+            .toQueue(queueName + '-debug')
+            .toQueue(queueName + '-warn');
     });
 }
+
